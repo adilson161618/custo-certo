@@ -82,6 +82,33 @@ dialog h3{margin:0 0 12px;font-size:18px}
 #toast.on{opacity:1}
 a{color:var(--acc2)}
 .exemplos{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.selo{display:inline-block;font-size:11.5px;font-weight:700;border-radius:20px;padding:2px 8px;background:var(--accsoft);color:var(--acc2);margin-left:6px;vertical-align:middle}
+.faixa{background:var(--accsoft);border:1px solid var(--acc);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+/* documento para imprimir */
+.doc{background:#fff;color:#111;border-radius:6px;padding:22px 20px;box-shadow:var(--sombra);font-size:14px;line-height:1.45}
+.doc+.doc{margin-top:14px}
+.doc h2{font-size:20px;margin:0;color:#111;text-transform:none;letter-spacing:0}
+.doc .cabdoc{display:flex;justify-content:space-between;gap:12px;border-bottom:3px solid #15803D;padding-bottom:10px;margin-bottom:14px}
+.doc .cabdoc .emp{font-weight:800;font-size:16px}
+.doc .cabdoc small{color:#555;display:block}
+.doc table{width:100%;border-collapse:collapse;margin:8px 0}
+.doc th,.doc td{border-bottom:1px solid #ddd;padding:7px 6px;text-align:left;vertical-align:top}
+.doc th{font-size:12px;color:#555;text-transform:uppercase}
+.doc td.n,.doc th.n{text-align:right;white-space:nowrap}
+.doc .tot td{font-weight:800;border-bottom:0;font-size:16px}
+.doc .ck{width:22px;font-size:16px}
+.doc .rot{font-size:12px;color:#555;text-transform:uppercase;margin-top:12px}
+.doc .ass{display:flex;gap:30px;margin-top:46px}
+.doc .ass div{flex:1;border-top:1px solid #333;text-align:center;padding-top:4px;font-size:12px}
+.doc .interno{font-size:11px;color:#a00;font-weight:700;text-transform:uppercase}
+@media print{
+  @page{margin:12mm}
+  html,body{background:#fff}
+  header,nav,#toast,.nao-imprime{display:none!important}
+  main{padding:0;max-width:none}
+  .doc{box-shadow:none;border-radius:0;padding:0}
+  .doc+.doc{margin-top:0;break-before:page;page-break-before:always}
+}
 </style>
 </head>
 <body>
@@ -175,6 +202,8 @@ function render(){
   const r=rota();calcAtual=null;
   const cab=document.getElementById('cab'),tela=document.getElementById('tela');
   document.getElementById('menu').innerHTML=[['calculos','🧮','Cálculos'],['materiais','📦','Materiais'],['ajustes','⚙️','Ajustes']].map(([k,ic,l])=>`<button class="${r.t===k||(r.t==='calc'&&k==='calculos')?'on':''}" onclick="ir('${k}')"><span class="ic">${ic}</span>${l}</button>`).join('');
+  if(r.t==='doc'){const c=db.calculos.find(x=>x.id===r.id);if(!c||!c.numero){ir('calculos');return;}
+    cab.innerHTML=`<button class="vb" onclick="ir('calc/${c.id}')" aria-label="Voltar">‹</button><h1>Nº ${c.numero} · ${esc(c.nome||'')}</h1>`;tela.innerHTML=telaDoc(c);return;}
   if(r.t==='calc'){const c=db.calculos.find(x=>x.id===r.id);if(!c){ir('calculos');return;}calcAtual=c;
     cab.innerHTML=`<button class="vb" onclick="ir('calculos')" aria-label="Voltar">‹</button><h1>${esc(c.nome||'Novo cálculo')}</h1><span class="salvo" id="salvo"></span>`;tela.innerHTML=telaCalc(c);atualizarCalc();return;}
   const tit={calculos:'Custo Certo',materiais:'Materiais',ajustes:'Ajustes'}[r.t]||'Custo Certo';
@@ -186,7 +215,7 @@ function render(){
 function telaCalculos(){
   const cs=[...db.calculos].sort((a,b)=>(b.atualizado||0)-(a.atualizado||0));
   return `<button class="btn cheio" onclick="novoCalculo()" style="margin-bottom:12px">+ Novo cálculo</button>
-  <div class="card">${cs.length?cs.map(c=>{const r=resumo(c);return `<div class="lista-item" onclick="ir('calc/${c.id}')"><div class="t"><b>${esc(c.nome||'Sem nome')}</b><small>${(c.itens||[]).length} item(ns)${r.rende!==1?` · rende ${numero(r.rende)}`:''}</small></div><div class="v"><b>${dinheiro(r.preco)}</b><small>custo ${dinheiro(r.un)}</small></div></div>`;}).join('')
+  <div class="card">${cs.length?cs.map(c=>{const r=resumo(c);return `<div class="lista-item" onclick="ir('calc/${c.id}')"><div class="t"><b>${esc(c.nome||'Sem nome')}${c.numero?`<span class="selo">Nº ${c.numero}</span>`:''}</b><small>${c.cliente?esc(c.cliente)+' · ':''}${(c.itens||[]).length} item(ns)${r.rende!==1?` · rende ${numero(r.rende)}`:''}</small></div><div class="v"><b>${dinheiro(r.preco)}</b><small>custo ${dinheiro(r.un)}</small></div></div>`;}).join('')
   :`<div class="vazio"><b>Quanto custa fazer?</b><br>Monte um bolo, uma peça, um pedaço de barra... e veja o custo e o preço de venda.<div class="exemplos"><button class="btn sec" onclick="exemplo('bolo')">Ver exemplo: bolo</button><button class="btn sec" onclick="exemplo('barra')">Ver exemplo: barra</button></div></div>`}</div>
   ${cs.length?'<p class="nota" style="text-align:center">O preço muda sozinho quando você atualiza o preço de um material.</p>':''}`;
 }
@@ -194,7 +223,10 @@ function novoCalculo(nome){const c={id:novoId(),nome:nome||'',itens:[],minutos:'
 
 /* ================= CÁLCULO (editor) ================= */
 function telaCalc(c){
-  return `<div class="card"><label class="campo" style="margin:0"><span>O que você vai fazer?</span><input id="cNome" value="${esc(c.nome)}" placeholder="Ex.: Bolo de chocolate, Pedaço de barra 1,5 m"></label></div>
+  return `${c.numero?`<div class="faixa"><b>Nº ${c.numero} · finalizado em ${dataBR(c.finalizado)}</b><div class="nota" style="margin:4px 0 10px">Se mudar algo aqui, toque em Finalizar de novo para atualizar a folha.</div><button class="btn cheio" onclick="ir('doc/${c.id}')">Ver orçamento e pedido</button></div>`:''}
+  <div class="card"><label class="campo"><span>O que você vai fazer?</span><input id="cNome" value="${esc(c.nome)}" placeholder="Ex.: Bolo de chocolate, Pedaço de barra 1,5 m"></label>
+    <div class="dois"><label class="campo" style="margin:0"><span>Cliente (opcional)</span><input data-c="cliente" value="${esc(c.cliente||'')}" placeholder="Nome"></label>
+    <label class="campo" style="margin:0"><span>Telefone (opcional)</span><input data-c="fone" inputmode="tel" value="${esc(c.fone||'')}"></label></div></div>
   <div class="card"><h2>Materiais usados</h2>
     <div id="itens">${(c.itens||[]).map((it,i)=>itemHTML(it,i)).join('')||'<p class="nota" style="margin:0 0 6px">Adicione o que vai usar: digite ou fale.</p>'}</div>
     <div style="display:flex;gap:8px;margin-top:10px"><input id="novoItem" list="dl_mat" placeholder="Digite um material e toque em +" enterkeyhint="done"><button class="btn" onclick="addItem()" aria-label="Adicionar">+</button>${SR?`<button class="btn sec" id="btnMic" onclick="falar()" aria-label="Falar">🎤</button>`:''}</div>
@@ -211,6 +243,10 @@ function telaCalc(c){
     <label class="campo"><span>Margem de lucro (%)</span><input data-c="margem" inputmode="decimal" value="${esc(c.margem)}" placeholder="${esc(db.ajustes.margem)}"></label></div>
     <div class="res" id="res"></div>
   </div>
+  <div class="card"><h2>Fechar o trabalho</h2>
+    <label class="campo"><span>Observações para o cliente (prazo, entrega, forma de pagamento)</span><input data-c="obs" value="${esc(c.obs||'')}" placeholder="Opcional"></label>
+    <button class="btn cheio" onclick="finalizar()">✔ Finalizar: gerar orçamento e pedido</button>
+    <p class="nota" style="margin:8px 0 0">Gera uma folha pronta para imprimir ou salvar em PDF: o orçamento para o cliente e o pedido com a lista de materiais para separar.</p></div>
   <div class="linha-btn" style="margin-bottom:10px"><button class="btn sec" onclick="compartilhar()">Compartilhar</button><button class="btn sec" onclick="ouvir()">🔊 Ouvir</button></div>
   <div class="linha-btn"><button class="btn sec" onclick="duplicar()">Duplicar</button><button class="btn perigo" onclick="excluirCalc()">Excluir</button></div>`;
 }
@@ -267,7 +303,50 @@ document.getElementById('tela').addEventListener('change',e=>{
   if(calcAtual&&el&&t.dataset.k==='nome'){const it=calcAtual.itens[+el.dataset.i];definirNome(it,t.value);tocou();render();}
 });
 document.getElementById('tela').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='novoItem'){e.preventDefault();addItem();}});
-function duplicar(){const c=JSON.parse(JSON.stringify(calcAtual));c.id=novoId();c.nome=(c.nome||'Cálculo')+' (cópia)';c.atualizado=Date.now();db.calculos.push(c);salvar();ir('calc/'+c.id);toast('Cópia criada');}
+/* ================= FINALIZAR: ORÇAMENTO + PEDIDO ================= */
+const dataBR=t=>t?new Date(t).toLocaleDateString('pt-BR'):'';
+function finalizar(){
+  const c=calcAtual;if(!c)return;
+  if(!String(c.nome||'').trim()){toast('Dê um nome ao trabalho antes de finalizar');document.getElementById('cNome').focus();return;}
+  if(!(c.itens||[]).length&&!lerQtd(c.minutos)&&!(c.outros||[]).length){toast('Adicione os materiais antes de finalizar');return;}
+  const falta=(c.itens||[]).filter(it=>custoItem(it).erro);
+  if(falta.length&&!confirm(`${falta.length} material(is) estão sem preço ou com unidade errada e vão sair como R$ 0. Finalizar mesmo assim?`))return;
+  if(!c.numero){db.seq=(db.seq||0)+1;c.numero=db.seq;}
+  c.finalizado=Date.now();c.atualizado=Date.now();salvar();ir('doc/'+c.id);
+}
+function telaDoc(c){
+  const a=db.ajustes,r=resumo(c),qtd=r.rende,total=r.preco*qtd,validade=Number(a.validade||7);
+  const quem=`<div><div class="emp">${esc(a.empresa||a.nome||'Seu negócio')}</div><small>${esc([a.empresa&&a.nome?a.nome:'',a.fone].filter(Boolean).join(' · '))}</small></div>`;
+  const cli=c.cliente||c.fone?`<div class="rot">Cliente</div><div><b>${esc(c.cliente||'')}</b>${c.fone?' · '+esc(c.fone):''}</div>`:'';
+  const orc=`<div class="doc"><div class="cabdoc">${quem}<div style="text-align:right"><h2>ORÇAMENTO Nº ${c.numero}</h2><small>Data: ${dataBR(c.finalizado)} · válido por ${validade} dias</small></div></div>
+    ${cli}
+    <table><thead><tr><th>Descrição</th><th class="n">Qtd</th><th class="n">Valor unit.</th><th class="n">Total</th></tr></thead>
+    <tbody><tr><td>${esc(c.nome)}</td><td class="n">${numero(qtd)}</td><td class="n">${dinheiro(r.preco)}</td><td class="n">${dinheiro(total)}</td></tr>
+    <tr class="tot"><td colspan="3">TOTAL</td><td class="n">${dinheiro(total)}</td></tr></tbody></table>
+    ${c.obs?`<div class="rot">Observações</div><div>${esc(c.obs)}</div>`:''}
+    <div class="ass"><div>${esc(a.empresa||a.nome||'Responsável')}</div><div>De acordo — cliente</div></div></div>`;
+  const linhas=(c.itens||[]).map(it=>{const m=mat(it.mat),x=custoItem(it);return `<tr><td class="ck">☐</td><td>${esc(m?m.nome:it.nome)}${x.erro?' <i style="color:#a00">(sem preço)</i>':''}</td><td class="n">${esc(it.qtd||'0')} ${UN_CURTO[it.un]||''}</td><td class="n">${dinheiro(x.custo)}</td></tr>`;}).join('');
+  const outros=(c.outros||[]).filter(o=>o.nome||lerQtd(o.valor)).map(o=>`<tr><td class="ck">☐</td><td>${esc(o.nome||'Outro gasto')}</td><td class="n"></td><td class="n">${dinheiro(lerQtd(o.valor))}</td></tr>`).join('');
+  const ped=`<div class="doc"><div class="cabdoc">${quem}<div style="text-align:right"><h2>PEDIDO Nº ${c.numero}</h2><small>Data: ${dataBR(c.finalizado)}</small><div class="interno">Uso interno</div></div></div>
+    <div class="rot">Trabalho</div><div><b>${esc(c.nome)}</b>${qtd!==1?` · ${numero(qtd)} unidades`:''}${c.cliente?' · cliente: '+esc(c.cliente):''}</div>
+    <div class="rot">Materiais para separar / comprar</div>
+    <table><thead><tr><th></th><th>Material</th><th class="n">Quantidade</th><th class="n">Custo</th></tr></thead><tbody>${linhas||'<tr><td colspan="4">Nenhum material.</td></tr>'}${outros}
+    ${lerQtd(c.minutos)?`<tr><td class="ck">☐</td><td>Tempo de trabalho</td><td class="n">${numero(lerQtd(c.minutos))} min</td><td class="n">${dinheiro(r.mo)}</td></tr>`:''}
+    <tr class="tot"><td></td><td colspan="2">Custo total</td><td class="n">${dinheiro(r.total)}</td></tr></tbody></table>
+    <table><tbody><tr><td>Preço de venda (total)</td><td class="n">${dinheiro(total)}</td></tr><tr><td>Lucro previsto</td><td class="n"><b>${dinheiro(r.lucro*qtd)}</b></td></tr></tbody></table>
+    ${c.obs?`<div class="rot">Observações</div><div>${esc(c.obs)}</div>`:''}
+    <div class="ass"><div>Separado por</div><div>Conferido por</div></div></div>`;
+  return `<div class="linha-btn nao-imprime" style="margin-bottom:12px"><button class="btn" onclick="window.print()">🖨 Imprimir / PDF</button><button class="btn sec" onclick="mandarOrcamento()">Enviar ao cliente</button></div>
+    <p class="nota nao-imprime" style="margin-top:0">Na impressão sai uma página para o cliente (orçamento) e outra para vocês (pedido). No celular, escolha "Salvar como PDF" para guardar.</p>
+    ${orc}${ped}`;
+}
+async function mandarOrcamento(){
+  const c=db.calculos.find(x=>x.id===rota().id),a=db.ajustes,r=resumo(c),qtd=r.rende;
+  const t=[`*ORÇAMENTO Nº ${c.numero}*${a.empresa||a.nome?' — '+(a.empresa||a.nome):''}`,c.cliente?`Cliente: ${c.cliente}`:'',`${c.nome}${qtd!==1?` · ${numero(qtd)} un. × ${dinheiro(r.preco)}`:''}`,`*Total: ${dinheiro(r.preco*qtd)}*`,c.obs||'',`Válido por ${Number(a.validade||7)} dias. Data: ${dataBR(c.finalizado)}`].filter(Boolean).join('\n');
+  if(navigator.share){try{await navigator.share({title:'Orçamento Nº '+c.numero,text:t});return;}catch(e){if(e.name==='AbortError')return;}}
+  window.open('https://wa.me/'+(String(c.fone||'').replace(/\D/g,'').length>=10?'55'+String(c.fone).replace(/\D/g,'').replace(/^55/,''):'')+'?text='+encodeURIComponent(t),'_blank');
+}
+function duplicar(){const c=JSON.parse(JSON.stringify(calcAtual));c.id=novoId();delete c.numero;delete c.finalizado;c.nome=(c.nome||'Cálculo')+' (cópia)';c.atualizado=Date.now();db.calculos.push(c);salvar();ir('calc/'+c.id);toast('Cópia criada');}
 function excluirCalc(){if(!confirm(`Excluir "${calcAtual.nome||'este cálculo'}"?`))return;db.calculos=db.calculos.filter(x=>x!==calcAtual);salvar();ir('calculos');}
 function textoResumo(c){
   const r=resumo(c),a=db.ajustes,linhas=[];
@@ -341,7 +420,9 @@ function atualizarLista(){document.getElementById('dl_mat').innerHTML=db.materia
 function telaAjustes(){const a=db.ajustes;
   return `<div class="card"><h2>Seus dados</h2>
     <label class="campo"><span>Seu nome</span><input data-a="nome" value="${esc(a.nome)}" placeholder="Opcional"></label>
-    <label class="campo" style="margin:0"><span>Nome do negócio</span><input data-a="empresa" value="${esc(a.empresa)}" placeholder="Opcional: sai no resumo compartilhado"></label></div>
+    <label class="campo"><span>Nome do negócio</span><input data-a="empresa" value="${esc(a.empresa)}" placeholder="Sai no orçamento impresso"></label>
+    <label class="campo"><span>Telefone / WhatsApp</span><input data-a="fone" inputmode="tel" value="${esc(a.fone||'')}" placeholder="Sai no orçamento impresso"></label>
+    <label class="campo" style="margin:0"><span>Validade do orçamento (dias)</span><input data-a="validade" inputmode="numeric" value="${esc(a.validade||7)}"></label></div>
   <div class="card"><h2>Padrões do cálculo</h2>
     <label class="campo"><span>Valor da sua hora de trabalho (R$)</span><input data-a="hora" inputmode="decimal" value="${esc(String(a.hora).replace('.',','))}"></label>
     <label class="campo"><span>Margem de lucro padrão (%)</span><input data-a="margem" inputmode="decimal" value="${esc(a.margem)}"></label>
@@ -351,8 +432,8 @@ function telaAjustes(){const a=db.ajustes;
     <p class="nota" style="margin-top:0">Seus dados ficam só neste aparelho. Baixe uma cópia de vez em quando, ou para passar para outro celular.</p>
     <div class="linha-btn"><button class="btn sec" onclick="baixarBackup()">Baixar cópia</button><button class="btn sec" onclick="document.getElementById('arqBk').click()">Restaurar cópia</button></div>
     <input type="file" id="arqBk" accept=".json,application/json" hidden></div>
-  <p class="nota" style="text-align:center">Custo Certo · versão <span id="ver">2.0.0</span><br><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>`;}
-document.getElementById('tela').addEventListener('input',e=>{const k=e.target.dataset.a;if(!k)return;db.ajustes[k]=['hora','margem','taxas'].includes(k)?lerQtd(e.target.value):e.target.value;salvar();});
+  <p class="nota" style="text-align:center">Custo Certo · versão <span id="ver">2.1.0</span><br><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>`;}
+document.getElementById('tela').addEventListener('input',e=>{const k=e.target.dataset.a;if(!k)return;db.ajustes[k]=['hora','margem','taxas','validade'].includes(k)?lerQtd(e.target.value):e.target.value;salvar();});
 function baixarBackup(){const b=new Blob([JSON.stringify(db,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='custo-certo-copia-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
 document.addEventListener('change',async e=>{if(e.target.id!=='arqBk')return;const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const d=JSON.parse(await f.text());if(!d.materiais||!d.calculos)throw 0;if(!confirm('Trocar os dados deste aparelho pelos da cópia?'))return;db=d;db.ajustes=Object.assign({hora:20,margem:30,taxas:0,nome:'',empresa:''},db.ajustes||{});salvar();atualizarLista();render();toast('Cópia restaurada');}
@@ -446,7 +527,7 @@ let tt;function toast(m){const t=document.getElementById('toast');t.textContent=
 atualizarLista();render();
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
   navigator.serviceWorker.register('service-worker.js').catch(()=>{});
-  const VER_APP='2.0.0';
+  const VER_APP='2.1.0';
   const checar=()=>fetch('version.json',{cache:'no-store'}).then(r=>r.json()).then(v=>{
     if(v.version&&v.version!==VER_APP&&!(dlgMat.open)){toast('Nova versão '+v.version+': atualizando...');
       navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).finally(()=>setTimeout(()=>location.reload(),1500));}}).catch(()=>{});
