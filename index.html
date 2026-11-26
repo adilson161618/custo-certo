@@ -108,6 +108,9 @@ a{color:var(--acc2)}
   main{padding:0;max-width:none}
   .doc{box-shadow:none;border-radius:0;padding:0}
   .doc+.doc{margin-top:0;break-before:page;page-break-before:always}
+  body[data-imp="orc"] .doc.ped,body[data-imp="ped"] .doc.orc{display:none!important}
+  body[data-imp] .doc+.doc{break-before:auto;page-break-before:auto}
+  body:not([data-imp]) .doc.ped{display:none!important}
 }
 </style>
 </head>
@@ -318,7 +321,7 @@ function telaDoc(c){
   const a=db.ajustes,r=resumo(c),qtd=r.rende,total=r.preco*qtd,validade=Number(a.validade||7);
   const quem=`<div><div class="emp">${esc(a.empresa||a.nome||'Seu negócio')}</div><small>${esc([a.empresa&&a.nome?a.nome:'',a.fone].filter(Boolean).join(' · '))}</small></div>`;
   const cli=c.cliente||c.fone?`<div class="rot">Cliente</div><div><b>${esc(c.cliente||'')}</b>${c.fone?' · '+esc(c.fone):''}</div>`:'';
-  const orc=`<div class="doc"><div class="cabdoc">${quem}<div style="text-align:right"><h2>ORÇAMENTO Nº ${c.numero}</h2><small>Data: ${dataBR(c.finalizado)} · válido por ${validade} dias</small></div></div>
+  const orc=`<div class="doc orc"><div class="cabdoc">${quem}<div style="text-align:right"><h2>ORÇAMENTO Nº ${c.numero}</h2><small>Data: ${dataBR(c.finalizado)} · válido por ${validade} dias</small></div></div>
     ${cli}
     <table><thead><tr><th>Descrição</th><th class="n">Qtd</th><th class="n">Valor unit.</th><th class="n">Total</th></tr></thead>
     <tbody><tr><td>${esc(c.nome)}</td><td class="n">${numero(qtd)}</td><td class="n">${dinheiro(r.preco)}</td><td class="n">${dinheiro(total)}</td></tr>
@@ -327,7 +330,7 @@ function telaDoc(c){
     <div class="ass"><div>${esc(a.empresa||a.nome||'Responsável')}</div><div>De acordo — cliente</div></div></div>`;
   const linhas=(c.itens||[]).map(it=>{const m=mat(it.mat),x=custoItem(it);return `<tr><td class="ck">☐</td><td>${esc(m?m.nome:it.nome)}${x.erro?' <i style="color:#a00">(sem preço)</i>':''}</td><td class="n">${esc(it.qtd||'0')} ${UN_CURTO[it.un]||''}</td><td class="n">${dinheiro(x.custo)}</td></tr>`;}).join('');
   const outros=(c.outros||[]).filter(o=>o.nome||lerQtd(o.valor)).map(o=>`<tr><td class="ck">☐</td><td>${esc(o.nome||'Outro gasto')}</td><td class="n"></td><td class="n">${dinheiro(lerQtd(o.valor))}</td></tr>`).join('');
-  const ped=`<div class="doc"><div class="cabdoc">${quem}<div style="text-align:right"><h2>PEDIDO Nº ${c.numero}</h2><small>Data: ${dataBR(c.finalizado)}</small><div class="interno">Uso interno</div></div></div>
+  const ped=`<div class="doc ped"><div class="cabdoc">${quem}<div style="text-align:right"><h2>PEDIDO Nº ${c.numero}</h2><small>Data: ${dataBR(c.finalizado)}</small><div class="interno">Uso interno</div></div></div>
     <div class="rot">Trabalho</div><div><b>${esc(c.nome)}</b>${qtd!==1?` · ${numero(qtd)} unidades`:''}${c.cliente?' · cliente: '+esc(c.cliente):''}</div>
     <div class="rot">Materiais para separar / comprar</div>
     <table><thead><tr><th></th><th>Material</th><th class="n">Quantidade</th><th class="n">Custo</th></tr></thead><tbody>${linhas||'<tr><td colspan="4">Nenhum material.</td></tr>'}${outros}
@@ -336,10 +339,15 @@ function telaDoc(c){
     <table><tbody><tr><td>Preço de venda (total)</td><td class="n">${dinheiro(total)}</td></tr><tr><td>Lucro previsto</td><td class="n"><b>${dinheiro(r.lucro*qtd)}</b></td></tr></tbody></table>
     ${c.obs?`<div class="rot">Observações</div><div>${esc(c.obs)}</div>`:''}
     <div class="ass"><div>Separado por</div><div>Conferido por</div></div></div>`;
-  return `<div class="linha-btn nao-imprime" style="margin-bottom:12px"><button class="btn" onclick="window.print()">🖨 Imprimir / PDF</button><button class="btn sec" onclick="mandarOrcamento()">Enviar ao cliente</button></div>
-    <p class="nota nao-imprime" style="margin-top:0">Na impressão sai uma página para o cliente (orçamento) e outra para vocês (pedido). No celular, escolha "Salvar como PDF" para guardar.</p>
+  return `<div class="card nao-imprime"><h2>Para o cliente</h2><p class="nota" style="margin-top:0">Só o preço final. Não mostra seus custos.</p>
+      <div class="linha-btn"><button class="btn" onclick="imprimir('orc')">🖨 Imprimir orçamento</button><button class="btn sec" onclick="mandarOrcamento()">Enviar pelo WhatsApp</button></div></div>
+    <div class="card nao-imprime"><h2>Para vocês (uso interno)</h2><p class="nota" style="margin-top:0">Pedido com materiais, custos e lucro. Não entregue ao cliente.</p>
+      <button class="btn sec cheio" onclick="imprimir('ped')">🖨 Imprimir pedido interno</button></div>
+    <p class="nota nao-imprime">No celular, escolha "Salvar como PDF" para guardar.</p>
     ${orc}${ped}`;
 }
+function imprimir(q){document.body.dataset.imp=q;window.print();setTimeout(()=>{delete document.body.dataset.imp;},500);}
+window.addEventListener('afterprint',()=>{delete document.body.dataset.imp;});
 async function mandarOrcamento(){
   const c=db.calculos.find(x=>x.id===rota().id),a=db.ajustes,r=resumo(c),qtd=r.rende;
   const t=[`*ORÇAMENTO Nº ${c.numero}*${a.empresa||a.nome?' — '+(a.empresa||a.nome):''}`,c.cliente?`Cliente: ${c.cliente}`:'',`${c.nome}${qtd!==1?` · ${numero(qtd)} un. × ${dinheiro(r.preco)}`:''}`,`*Total: ${dinheiro(r.preco*qtd)}*`,c.obs||'',`Válido por ${Number(a.validade||7)} dias. Data: ${dataBR(c.finalizado)}`].filter(Boolean).join('\n');
@@ -432,7 +440,7 @@ function telaAjustes(){const a=db.ajustes;
     <p class="nota" style="margin-top:0">Seus dados ficam só neste aparelho. Baixe uma cópia de vez em quando, ou para passar para outro celular.</p>
     <div class="linha-btn"><button class="btn sec" onclick="baixarBackup()">Baixar cópia</button><button class="btn sec" onclick="document.getElementById('arqBk').click()">Restaurar cópia</button></div>
     <input type="file" id="arqBk" accept=".json,application/json" hidden></div>
-  <p class="nota" style="text-align:center">Custo Certo · versão <span id="ver">2.1.0</span><br><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>`;}
+  <p class="nota" style="text-align:center">Custo Certo · versão <span id="ver">2.1.1</span><br><a href="privacidade.html">Privacidade</a> · <a href="termos.html">Termos de uso</a></p>`;}
 document.getElementById('tela').addEventListener('input',e=>{const k=e.target.dataset.a;if(!k)return;db.ajustes[k]=['hora','margem','taxas','validade'].includes(k)?lerQtd(e.target.value):e.target.value;salvar();});
 function baixarBackup(){const b=new Blob([JSON.stringify(db,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='custo-certo-copia-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
 document.addEventListener('change',async e=>{if(e.target.id!=='arqBk')return;const f=e.target.files[0];e.target.value='';if(!f)return;
@@ -527,7 +535,7 @@ let tt;function toast(m){const t=document.getElementById('toast');t.textContent=
 atualizarLista();render();
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
   navigator.serviceWorker.register('service-worker.js').catch(()=>{});
-  const VER_APP='2.1.0';
+  const VER_APP='2.1.1';
   const checar=()=>fetch('version.json',{cache:'no-store'}).then(r=>r.json()).then(v=>{
     if(v.version&&v.version!==VER_APP&&!(dlgMat.open)){toast('Nova versão '+v.version+': atualizando...');
       navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).finally(()=>setTimeout(()=>location.reload(),1500));}}).catch(()=>{});
