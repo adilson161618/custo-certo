@@ -4,7 +4,7 @@
 // Demais arquivos: CACHE-FIRST (funciona sem internet)
 // ============================================================
 
-const SW_VERSION = '1.0.0';
+const SW_VERSION = '2.0.0';
 const STATIC_CACHE = 'custocerto-static-v' + SW_VERSION;
 const RUNTIME_CACHE = 'custocerto-runtime';
 const CACHE_PREFIX = 'custocerto-';

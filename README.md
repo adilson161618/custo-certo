@@ -1,19 +1,11 @@
 # Custo Certo
 
-Custo, estoque e orçamento para oficinas, serralherias e pequenas fábricas.
+Calcule quanto custa fazer qualquer coisa e qual preço cobrar: um bolo, uma torta, uma peça de metal, um pedaço de barra.
 
-- Custo de cada peça, item por item (chapa por área, barra por comprimento, caixa pela quantidade).
-- Notas de compra por XML e código de barras: o estoque e o custo se atualizam sozinhos.
-- Estoque baixa sozinho quando o pedido entra em produção.
-- Orçamentos, pedidos, obras, contas a pagar e a receber.
-- Fale os itens no microfone e ouça o custo.
+1. **Materiais:** cadastre o que você comprou e quanto pagou (1 kg de farinha por R$ 6, barra de 6 m por R$ 120, chapa 1x2 m por R$ 300, caixa com 30 ovos por R$ 18).
+2. **Cálculo:** diga quanto usa de cada um (300 g, 3 ovos, 1,5 m, 10x20 cm), digitando ou falando no microfone.
+3. **Resultado:** custo total, custo por unidade e preço de venda com a sua margem e as taxas.
 
-App web instalável (PWA), publicado no GitHub Pages e empacotado para a Google Play (TWA), no mesmo padrão do EntregaLog.
+Funciona sem internet, os dados ficam no aparelho e dá para compartilhar o resumo no WhatsApp.
 
-## Como atualizar
-
-1. Altere o programa `GestaoPerfilados.html` (pasta de trabalho).
-2. Rode `montar-custo-certo.ps1` para gerar esta pasta com a nova versão.
-3. Suba os arquivos para este repositório. O app avisa a nova versão e se atualiza sozinho.
-
-Política de privacidade: `privacidade.html` · Termos: `termos.html`
+App web instalável (PWA) no GitHub Pages, empacotado para a Google Play (TWA, `com.custocerto.app`).

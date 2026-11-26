@@ -1,7 +1,7 @@
 {
-  "name": "Custo Certo — custo, estoque e orçamento",
+  "name": "Custo Certo — quanto custa fazer",
   "short_name": "Custo Certo",
-  "description": "App para oficinas e pequenas fábricas calcularem o custo de cada peça, controlarem o estoque pela nota fiscal e fazerem orçamentos.",
+  "description": "Calcule quanto custa fazer qualquer coisa (receitas, peças, pedaços de material) e qual preço cobrar.",
   "id": "./index.html",
   "start_url": "./index.html",
   "scope": "./",
