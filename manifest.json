@@ -1,0 +1,19 @@
+{
+  "name": "Custo Certo — custo, estoque e orçamento",
+  "short_name": "Custo Certo",
+  "description": "App para oficinas e pequenas fábricas calcularem o custo de cada peça, controlarem o estoque pela nota fiscal e fazerem orçamentos.",
+  "id": "./index.html",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#16A34A",
+  "theme_color": "#16A34A",
+  "lang": "pt-BR",
+  "categories": ["business", "productivity", "finance"],
+  "icons": [
+    { "src": "custocerto-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "custocerto-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "custocerto-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
